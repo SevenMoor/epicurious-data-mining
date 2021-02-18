@@ -43,7 +43,7 @@ clusterized<-clusterized[!(clusterized$protein<protein_bounds[1] | clusterized$p
 #-------------------------------------------
 centroids <- matrix(ncol=3,nrow=0)
 
-cluster_count <- 6
+cluster_count <- 3
 if(cluster_count<nrow(clusterized)){
   pos <- sample(1:nrow(clusterized),cluster_count)
   print(pos)
@@ -72,6 +72,9 @@ iteration <- 0
 #Main iterations
 #---------------
 repeat{
+  
+  moved <- 0
+  
   cat("Iteration ",iteration,"\n")
   centroids_buffer <- centroids
   
@@ -85,6 +88,9 @@ repeat{
         distance_to_closest <- distance(clusterized[i,],centroids[j,])
         closest <- j
       }
+    }
+    if(clusterized[i,5]!=closest){
+      moved <- moved+1
     }
     clusterized[i,5] <- closest
   }
@@ -107,7 +113,7 @@ repeat{
     centroids[i] <- c(x/counter,y/counter,z/counter)
   }
   
-  if(centroids==centroids_buffer){
+  if(centroids==centroids_buffer|moved<nrow(clusterized)*0.001){
     break
   }
   iteration <- iteration+1
@@ -131,5 +137,5 @@ plot
 
 #Saving data for later use
 #-------------------------
-save(clusterized,"clusters.Rda")
+save(clusterized,file="clusters.Rda")
 htmlwidgets::saveWidget(as_widget(plot), "index.html")
