@@ -8,7 +8,7 @@ reviews <- aggregate(reviews[2],reviews[1],mean)
 recipes <- merge(df,reviews,by.x = "id",by.y = "recipe_id")
 
 clusterized <- data.frame(matrix(ncol = 5, nrow =0))
-cluster_df_cols <- c("name","fat","sugar","protein","cluster")
+cluster_df_cols <- c("id","fat","sugar","protein","cluster")
 colnames(clusterized) <- cluster_df_cols
 
 
@@ -21,16 +21,29 @@ for (i in 1:1000){
   nutrition <- sub("\\]","",nutrition)
   nutrition <- unlist(strsplit(nutrition,","))
   print(i)
-  print(nutrition)
-  clusterized <- rbind(clusterized, data.frame(name=recipes[i,"name"],fat=as.numeric(nutrition[2]), sugar=as.numeric(nutrition[3]), protein=as.numeric(nutrition[5]), cluster=0))
+  clusterized <- rbind(clusterized, data.frame(id=recipes[i,"id"],fat=as.numeric(nutrition[2]), sugar=as.numeric(nutrition[3]), protein=as.numeric(nutrition[5]), cluster=0))
 }
 
+
+#Preprocessing of the data
+#-------------------------
+get_outlier_thresholds <- function(df,lower,upper,column){
+  return(quantile( x = df[,  column], c(lower,upper), na.rm = TRUE))
+}
+
+fat_bounds <- get_outlier_thresholds(clusterized,.05,.95,2)
+sugar_bounds <- get_outlier_thresholds(clusterized,.05,.95,3)
+protein_bounds <- get_outlier_thresholds(clusterized,.05,.95,4)
+
+clusterized<-clusterized[!(clusterized$fat<fat_bounds[1] | clusterized$fat> fat_bounds[2]),]
+clusterized<-clusterized[!(clusterized$sugar<sugar_bounds[1] | clusterized$sugar> sugar_bounds[2]),]
+clusterized<-clusterized[!(clusterized$protein<protein_bounds[1] | clusterized$protein> protein_bounds[2]),]
 
 #Initializing centroids and seeding clusters
 #-------------------------------------------
 centroids <- matrix(ncol=3,nrow=0)
 
-cluster_count <- 5
+cluster_count <- 6
 if(cluster_count<nrow(clusterized)){
   pos <- sample(1:nrow(clusterized),cluster_count)
   print(pos)
@@ -59,6 +72,7 @@ iteration <- 0
 #Main iterations
 #---------------
 repeat{
+  cat("Iteration ",iteration,"\n")
   centroids_buffer <- centroids
   
   #Cluster assignment
@@ -66,7 +80,6 @@ repeat{
   for(i in 1:nrow(clusterized)){
     closest <- NA
     distance_to_closest <- 0
-    cat("Iteration ",iteration,", datapoint ",i,"\n")
     for(j in 1:cluster_count){
       if(is.na(closest) || distance_to_closest>distance(clusterized[i,],centroids[j,])){
         distance_to_closest <- distance(clusterized[i,],centroids[j,])
@@ -100,15 +113,23 @@ repeat{
   iteration <- iteration+1
 }
 
+
+#Printing scatter plot
+#---------------------
 plot <- plot_ly(data = clusterized, 
                 x=~fat,
                 y=~sugar,
                 z=~protein,
                 color=~cluster,
-                text=~paste("Recipe:",name,"\n=====\nfat:",fat,"\nsugar:",sugar,"\nprotein:",protein),
+                text=~paste("Recipe:",id,"\n=====\nfat:",fat,"\nsugar:",sugar,"\nprotein:",protein),
                 marker=list(
                   size=3
                   )
                 )
 plot
+
+
+#Saving data for later use
+#-------------------------
+save(clusterized,"clusters.Rda")
 htmlwidgets::saveWidget(as_widget(plot), "index.html")
