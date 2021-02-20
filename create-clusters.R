@@ -113,7 +113,7 @@ repeat{
     centroids[i] <- c(x/counter,y/counter,z/counter)
   }
   
-  if(centroids==centroids_buffer|moved<nrow(clusterized)*0.001){
+  if(centroids==centroids_buffer|moved<max(1,nrow(clusterized)*0.001)){
     break
   }
   iteration <- iteration+1
@@ -122,6 +122,9 @@ repeat{
 
 #Printing scatter plot
 #---------------------
+clusterized <- exploitable
+clusterized$cluster <- as.character(clusterized$cluster)
+
 plot <- plot_ly(data = clusterized, 
                 x=~fat,
                 y=~sugar,
@@ -130,8 +133,10 @@ plot <- plot_ly(data = clusterized,
                 text=~paste("Recipe:",id,"\n=====\nfat:",fat,"\nsugar:",sugar,"\nprotein:",protein),
                 marker=list(
                   size=3
-                  )
+                  ),
+                colors=c("#A846DD","#4357AD","#00A6A6","#DB5461","#FFD97D","#36382E")
                 )
+plot <- plot %>% layout(title = 'Generated clusters')
 plot
 
 
