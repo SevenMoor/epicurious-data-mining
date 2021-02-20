@@ -16,14 +16,14 @@ recipes <- merge(df,reviews,by.x = "id",by.y = "recipe_id")
 # https://eric.univ-lyon2.fr/~ricco/cours/slides/data%20frame%20avec%20r.pdf
 
 # Apriori Algorithm
-ingredients <- recipes$ingredients[1:1000]
+ingredients <- recipes$ingredients[1:100]
 ingredients <- gsub("\\[", "", ingredients)
 ingredients <- gsub("\\]", "", ingredients)
 ingredients <- gsub("'", "", ingredients)
 for (i in 1:length(ingredients)) {
   ingredients[[i]] <- strsplit(ingredients[[i]], split = ', ')  
 }
-ingredientsFile <- "datas/ingredients.csv"
+recipe_ingredients <- data.frame(ingredients[])
 
 ### Our implementation of the algorithms
 # Set the minimum support and minimum confidence thresholds
@@ -31,12 +31,9 @@ min_sup <- 0.001
 min_conf <- 0.8
 
 # Count support for each item
-support <- array()
+support <- vector()
 for (itemSet in ingredients) {
-  for (item in itemSet) {
-    if(length(item) > 1) {
-      print(item)
-    }
+  for (item in itemSet[[1]]) {
     if (is.na(support[item])) {
       support[item] <- 1
     }
@@ -46,9 +43,6 @@ for (itemSet in ingredients) {
   } 
 }
 
-support[60:80]
-support["gingersnap crumbs"]
-is.na(support["gingersnap crumbs"])
 # Filter items over the minimum support threshold
 # Combine filtered items to obtain next item-sets
 # Filter and combine until you can't go further
@@ -61,6 +55,7 @@ is.na(support["gingersnap crumbs"])
 
 
 ### Test existing algorithms
+ingredientsFile <- "datas/ingredients.csv"
 write.csv(x = ingredients, file = ingredientsFile, quote = FALSE, row.names = FALSE)
 ingredients_tr <- read.transactions(file = ingredientsFile, format = 'basket', sep = ',')
 
